@@ -1,7 +1,8 @@
 import { ProductDocument } from '@/interfaces/product.interface';
 import { ProductModel } from '@/models/product.model';
-import { ProductCreateInput, ProductDeletePayload, ProductEditInput } from '@/types/product.types';
+import { ProductCreateInput, ProductDeletePayload, ProductEditInput, ProductQueryDto } from '@/types/product.types';
 import { assertExists, assertFound } from '@/utils/assert.util';
+import { FilterQuery } from 'mongoose';
 
 /**
  * Creates a new product in the database.
@@ -26,6 +27,49 @@ export const createProduct = async (data: ProductCreateInput): Promise<ProductDo
  */
 export const listProducts = async (): Promise<ProductDocument[]> => {
   return ProductModel.find().lean<ProductDocument[]>();
+};
+
+/**
+ * Retrieves a filtered and paginated list of products.
+ *
+ * @description
+ * -> Applies optional search and criticalOnly filters.
+ * -> Returns paginated results with total count.
+ *
+ * @param dto - ProductQueryDto with filters and pagination config
+ * @returns Object with paginated product data and metadata
+ */
+export const listProductsWithFilters = async (
+  dto: ProductQueryDto
+): Promise<{
+  data: ProductDocument[];
+  total: number;
+  page: number;
+  limit: number;
+}> => {
+  return {
+    ...(await (async () => {
+      const query: FilterQuery<ProductDocument> = {
+        ...(dto.search && {
+          $or: [{ name: { $regex: dto.search, $options: 'i' } }, { code: { $regex: dto.search, $options: 'i' } }]
+        }),
+        ...(dto.criticalOnly && { $expr: { $lte: ['$stock', '$criticalStock'] } })
+      };
+
+      const [data, total] = await Promise.all([
+        ProductModel.find(query)
+          .skip((dto.page - 1) * dto.limit)
+          .limit(dto.limit)
+          .lean<ProductDocument[]>(),
+
+        ProductModel.countDocuments(query)
+      ]);
+
+      return { data, total };
+    })()),
+    page: dto.page,
+    limit: dto.limit
+  };
 };
 
 /**

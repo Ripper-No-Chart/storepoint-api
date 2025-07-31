@@ -1,6 +1,12 @@
 import { Operation } from '@/constants/roles.constants';
 import { UserRole } from '@/constants/user.constants';
-import { createProduct, deleteProduct, editProduct, listProducts } from '@/controllers/product.controller';
+import {
+  createProduct,
+  deleteProduct,
+  editProduct,
+  listCriticalProducts,
+  listProducts
+} from '@/controllers/product.controller';
 import { auditMiddleware } from '@/middlewares/audit.middleware';
 import { buildAuthenticate } from '@/middlewares/authenticate';
 import { permit } from '@/middlewares/permit.middleware';
@@ -25,6 +31,16 @@ export const productRoutes = async (fastify: FastifyInstance): Promise<void> => 
       auditMiddleware
     ],
     handler: listProducts
+  });
+
+  fastify.post('/list_critical', {
+    preHandler: [
+      authenticate,
+      requireRole(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER),
+      permit(Operation.LIST_PRODUCT),
+      auditMiddleware
+    ],
+    handler: listCriticalProducts
   });
 
   fastify.post('/create_product', {

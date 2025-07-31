@@ -6,13 +6,14 @@ import { z } from 'zod';
  *
  * @description
  * -> Validates all required fields for a new product.
- * -> Ensures the product has valid name, description, price, stock, categoryId, and supplierId.
+ * -> Ensures the product has valid name, description, price, stock, criticalStock, categoryId, and supplierId.
  *
  * @fields
  * -> name: string (required)
  * -> description: string (required)
  * -> price: number (required)
  * -> stock: number (required)
+ * -> criticalStock: number (required)
  * -> categoryId: ObjectId (required)
  * -> supplierId: ObjectId (required)
  */
@@ -21,8 +22,46 @@ export const productCreateSchema = z.object({
   description: z.string({ required_error: 'Product description is required' }),
   price: z.number({ required_error: 'Price is required' }),
   stock: z.number({ required_error: 'Stock is required' }),
+  criticalStock: z.number({ required_error: 'Critical stock is required' }),
   categoryId: zObjectId(),
   supplierId: zObjectId()
+});
+
+/**
+ * Zod schema for querying products with filters and pagination.
+ *
+ * @description
+ * -> Validates optional filters for search and critical stock.
+ * -> Validates pagination inputs with defaults.
+ *
+ * @fields
+ * -> search: string (optional, trimmed)
+ * -> criticalOnly: boolean (optional)
+ * -> page: number (optional, min 1, default 1)
+ * -> limit: number (optional, min 1, max 100, default 10)
+ */
+
+export const productQuerySchema = z.object({
+  search: z.string().trim().min(1).optional(),
+  criticalOnly: z.boolean().optional(),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(100).default(10)
+});
+
+/**
+ * Zod schema for paginating critical product list.
+ *
+ * @description
+ * -> Omits search and criticalOnly from ProductQuerySchema.
+ * -> Used exclusively for /products/critical endpoint.
+ *
+ * @fields
+ * -> page: number (default 1)
+ * -> limit: number (default 10)
+ */
+export const CriticalProductQuerySchema = productQuerySchema.omit({
+  search: true,
+  criticalOnly: true
 });
 
 /**
@@ -52,6 +91,7 @@ export const productDeleteSchema = z.object({
  * -> description: string (optional)
  * -> price: number (optional)
  * -> stock: number (optional)
+ * -> criticalStock: number (optional)
  * -> categoryId: ObjectId (optional)
  * -> supplierId: ObjectId (optional)
  */
@@ -61,6 +101,7 @@ export const productEditSchema = z.object({
   description: z.string().optional(),
   price: z.number().optional(),
   stock: z.number().optional(),
+  criticalStock: z.number().optional(),
   categoryId: zObjectId().optional(),
   supplierId: zObjectId().optional()
 });

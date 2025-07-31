@@ -1,14 +1,20 @@
 import { Types } from 'mongoose';
 import { z } from 'zod';
 
-import { productCreateSchema, productDeleteSchema, productEditSchema } from '@/schemas/product.schema';
+import {
+  CriticalProductQuerySchema,
+  productCreateSchema,
+  productDeleteSchema,
+  productEditSchema,
+  productQuerySchema
+} from '@/schemas/product.schema';
 
 /**
  * Payload for creating a product.
  *
  * @description
  * -> Describes the structure of the input data required to create a product.
- * -> Includes the product's name, description, price, stock, and associated category and supplier IDs.
+ * -> Includes the product's name, description, price, stock, critical stock and associated category and supplier IDs.
  */
 export type ProductCreateInput = z.infer<typeof productCreateSchema>;
 
@@ -26,7 +32,7 @@ export type ProductDeletePayload = z.infer<typeof productDeleteSchema>;
  *
  * @description
  * -> Defines the structure for editing an existing product's details.
- * -> Allows for optional fields to update, including name, description, price, stock, and references to category and supplier.
+ * -> Allows for optional fields to update, including name, description, price, stock,critical stock and references to category and supplier.
  */
 export type ProductEditInput = z.infer<typeof productEditSchema>;
 
@@ -43,3 +49,31 @@ export type ProductLean = {
   name: string;
   stock: number;
 };
+
+/**
+ * Product query DTO.
+ *
+ * @description
+ * -> Represents validated product query parameters from client.
+ * -> Used to filter and paginate product list.
+ *
+ * @fields
+ * -> search: string (optional)
+ * -> criticalOnly: boolean (optional)
+ * -> page: number (default 1)
+ * -> limit: number (default 10)
+ */
+export type ProductQueryDto = z.infer<typeof productQuerySchema>;
+
+/**
+ * Critical product query DTO.
+ *
+ * @description
+ * -> Represents validated pagination parameters for critical product listing.
+ * -> Used exclusively by the /products/critical endpoint.
+ *
+ * @fields
+ * -> page: number (default 1)
+ * -> limit: number (default 10)
+ */
+export type CriticalProductQueryDto = z.infer<typeof CriticalProductQuerySchema>;

@@ -1,24 +1,49 @@
-import { productCreateSchema, productDeleteSchema, productEditSchema } from '@/schemas/product.schema';
+import {
+  CriticalProductQuerySchema,
+  productCreateSchema,
+  productDeleteSchema,
+  productEditSchema,
+  productQuerySchema
+} from '@/schemas/product.schema';
 import * as productService from '@/services/product.service';
-import { ProductCreateInput, ProductDeletePayload, ProductEditInput } from '@/types/product.types';
+import {
+  CriticalProductQueryDto,
+  ProductCreateInput,
+  ProductDeletePayload,
+  ProductEditInput,
+  ProductQueryDto
+} from '@/types/product.types';
 import { sendSuccess } from '@/utils/response.util';
 import { FastifyReply, FastifyRequest } from 'fastify';
 
 /**
- * Lists all products.
- *
- * @route POST /api/products/list_products
- * @access manager, admin
+ * List products with filters and pagination.
  *
  * @description
- * -> Supports filters and pagination.
+ * -> Accepts search, criticalOnly, page, and limit via POST body.
+ * -> Validates input with ProductQuerySchema and returns a paginated list.
  *
- * @fields
- * -> page – Page number
- * -> limit – Items per page
+ * @body
+ * -> search: string (optional)
+ * -> criticalOnly: boolean (optional)
+ * -> page: number (default 1)
+ * -> limit: number (default 10)
+ *
+ * @returns
+ * -> data: Product[]
+ * -> total: number
+ * -> page: number
+ * -> limit: number
  */
-export const listProducts = async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  sendSuccess(reply, await productService.listProducts());
+export const listProducts = async (
+  request: FastifyRequest<{ Body: ProductQueryDto }>,
+  reply: FastifyReply
+): Promise<void> => {
+  sendSuccess(
+    reply,
+    await productService.listProductsWithFilters(productQuerySchema.parse(request.body)),
+    'Products fetched'
+  );
 };
 
 /**
@@ -84,4 +109,29 @@ export const editProduct = async (
   reply: FastifyReply
 ): Promise<void> => {
   sendSuccess(reply, await productService.editProduct(productEditSchema.parse(request.body)), 'Product updated');
+};
+
+/**
+ * List products in critical stock condition.
+ *
+ * @description
+ * -> Returns products where stock <= criticalQuantity with pagination.
+ *
+ * @route POST /products/critical
+ * @body
+ * -> page: number (default 1)
+ * -> limit: number (default 10)
+ */
+export const listCriticalProducts = async (
+  request: FastifyRequest<{ Body: CriticalProductQueryDto }>,
+  reply: FastifyReply
+): Promise<void> => {
+  sendSuccess(
+    reply,
+    await productService.listProductsWithFilters({
+      ...CriticalProductQuerySchema.parse(request.body),
+      criticalOnly: true
+    }),
+    'Critical products fetched'
+  );
 };

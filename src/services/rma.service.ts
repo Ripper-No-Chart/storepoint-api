@@ -21,16 +21,15 @@ import { Types } from 'mongoose';
  * @returns The created RMA document
  */
 export const createRMA = async (data: CreateRMABody, userId: Types.ObjectId): Promise<RMADocument> => {
-  const sale: SaleLean = assertFound(await SaleModel.findById(data.saleId).lean<SaleLean | null>(), 'Sale not found');
-
-  const isValid: boolean = data.items.every((item: CreateRMABody['items'][number]): boolean => {
-    const match: SaleLean['products'][number] | undefined = sale.products.find(
-      (p: SaleLean['products'][number]): boolean => p.product.equals(item.productId)
-    );
-    return !!match && match.quantity >= item.quantity;
-  });
-
-  if (!isValid) {
+  if (
+    !data.items.every(async (item: CreateRMABody['items'][number]): Promise<boolean> => {
+      const match: SaleLean['products'][number] | undefined = assertFound(
+        await SaleModel.findById(data.saleId).lean<SaleLean | null>(),
+        'Sale not found'
+      ).products.find((p: SaleLean['products'][number]): boolean => p.product.equals(item.productId));
+      return !!match && match.quantity >= item.quantity;
+    })
+  ) {
     throw createError(HTTP_STATUS.BAD_REQUEST, 'Invalid return quantity for one or more products');
   }
 
@@ -42,7 +41,7 @@ export const createRMA = async (data: CreateRMABody, userId: Types.ObjectId): Pr
     )
   );
 
-  const rma: RMADocument = await RMAModel.create({
+  return RMAModel.create({
     sale: new Types.ObjectId(data.saleId),
     items: data.items.map((item: CreateRMABody['items'][number]) => ({
       product: new Types.ObjectId(item.productId),
@@ -52,8 +51,6 @@ export const createRMA = async (data: CreateRMABody, userId: Types.ObjectId): Pr
     processedBy: userId,
     date: data.date ?? new Date()
   });
-
-  return rma;
 };
 
 /**
@@ -66,7 +63,7 @@ export const createRMA = async (data: CreateRMABody, userId: Types.ObjectId): Pr
  * @returns Array of RMAs for the sale
  */
 export const listRMAsBySale = async (data: ListRMAsBySaleBody): Promise<RMADocument[]> => {
-  return await RMAModel.find({ sale: data.saleId })
+  return RMAModel.find({ sale: data.saleId })
     .populate('processedBy', 'name email')
     .populate('items.product', 'name')
     .sort({ createdAt: -1 })

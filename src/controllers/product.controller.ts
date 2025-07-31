@@ -1,4 +1,3 @@
-import { ProductDocument } from '@/interfaces/product.interface';
 import { productCreateSchema, productDeleteSchema, productEditSchema } from '@/schemas/product.schema';
 import * as productService from '@/services/product.service';
 import { ProductCreateInput, ProductDeletePayload, ProductEditInput } from '@/types/product.types';
@@ -19,8 +18,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
  * -> limit – Items per page
  */
 export const listProducts = async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const products: ProductDocument[] = await productService.listProducts();
-  sendSuccess(reply, products);
+  sendSuccess(reply, await productService.listProducts());
 };
 
 /**
@@ -41,9 +39,7 @@ export const createProduct = async (
   request: FastifyRequest<{ Body: ProductCreateInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data = productCreateSchema.parse(request.body);
-  const product = await productService.createProduct(data);
-  sendSuccess(reply, product, 'Product created');
+  sendSuccess(reply, await productService.createProduct(productCreateSchema.parse(request.body)), 'Product created');
 };
 
 /**
@@ -64,8 +60,7 @@ export const deleteProduct = async (
   reply: FastifyReply
 ): Promise<void> => {
   const { _id } = productDeleteSchema.parse(request.body);
-  const deleted: ProductDocument = await productService.deleteProduct(_id);
-  sendSuccess(reply, deleted, 'Product deleted');
+  sendSuccess(reply, await productService.deleteProduct(_id), 'Product deleted');
 };
 
 /**
@@ -88,7 +83,5 @@ export const editProduct = async (
   request: FastifyRequest<{ Body: ProductEditInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: ProductEditInput = productEditSchema.parse(request.body);
-  const updated: ProductDocument = await productService.editProduct(data);
-  sendSuccess(reply, updated, 'Product updated');
+  sendSuccess(reply, await productService.editProduct(productEditSchema.parse(request.body)), 'Product updated');
 };

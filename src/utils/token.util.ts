@@ -1,6 +1,6 @@
-import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
-import { Types } from 'mongoose';
 import { UserRole } from '@/constants/user.constants';
+import jwt, { SignOptions } from 'jsonwebtoken';
+import { Types } from 'mongoose';
 
 /**
  * Generates a JWT token.
@@ -14,9 +14,7 @@ import { UserRole } from '@/constants/user.constants';
  * @returns Signed JWT token
  */
 export const generateToken = (userId: Types.ObjectId, role: UserRole): string => {
-  const secret: string = process.env.JWT_SECRET || 'default_secret';
-  const expiresIn: SignOptions['expiresIn'] = (process.env.JWT_EXPIRES_IN || '1d') as SignOptions['expiresIn'];
-
-  const payload: JwtPayload = { userId, role };
-  return jwt.sign(payload, secret, { expiresIn });
+  return jwt.sign({ userId, role }, process.env.JWT_SECRET ?? 'default_secret', {
+    expiresIn: (process.env.JWT_EXPIRES_IN ?? '1d') as SignOptions['expiresIn']
+  });
 };

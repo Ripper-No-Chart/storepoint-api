@@ -16,13 +16,8 @@ export const adjustStockOnSale = async (soldItems: SaleProductInput[]): Promise<
   for (const item of soldItems) {
     const product: ProductDocument | null = await ProductModel.findById(item.productId).lean<ProductDocument | null>();
 
-    if (!product) {
-      throw new Error(`Product not found: ${item.productId}`);
-    }
-
-    if (product.stock < item.quantity) {
-      throw new Error(`Insufficient stock for product: ${product.name}`);
-    }
+    if (!product) throw new Error(`Product not found: ${item.productId}`);
+    if (product.stock < item.quantity) throw new Error(`Insufficient stock for product: ${product.name}`);
 
     product.stock -= item.quantity;
     await product.save();

@@ -17,9 +17,7 @@ import { assertExists, assertFound } from '@/utils/assert.util';
  * @returns The created supplier document
  */
 export const createSupplier = async (data: SupplierCreateInput): Promise<SupplierDocument> => {
-  const supplier: SupplierDocument = new SupplierModel(data);
-  const saved: SupplierDocument | null = await supplier.save();
-  return assertExists(saved, 'Failed to create supplier');
+  return assertExists(await new SupplierModel(data).save(), 'Failed to create supplier');
 };
 
 /**
@@ -35,7 +33,7 @@ export const createSupplier = async (data: SupplierCreateInput): Promise<Supplie
  * @returns Array of supplier documents
  */
 export const listSuppliers = async (): Promise<SupplierDocument[]> => {
-  return await SupplierModel.find().lean<SupplierDocument[]>();
+  return SupplierModel.find().lean<SupplierDocument[]>();
 };
 
 /**
@@ -52,8 +50,7 @@ export const listSuppliers = async (): Promise<SupplierDocument[]> => {
  * @returns The deleted supplier document
  */
 export const deleteSupplier = async (_id: SupplierDeletePayload['_id']): Promise<SupplierDocument> => {
-  const deleted: SupplierDocument | null = await SupplierModel.findByIdAndDelete(_id).lean<SupplierDocument | null>();
-  return assertFound(deleted, 'Supplier not found');
+  return assertFound(await SupplierModel.findByIdAndDelete(_id).lean<SupplierDocument | null>(), 'Supplier not found');
 };
 
 /**
@@ -71,8 +68,10 @@ export const deleteSupplier = async (_id: SupplierDeletePayload['_id']): Promise
  */
 export const editSupplier = async (data: SupplierEditInput): Promise<SupplierDocument> => {
   const { _id, ...update } = data;
-  const updated: SupplierDocument | null = await SupplierModel.findByIdAndUpdate(_id, update, {
-    new: true
-  }).lean<SupplierDocument | null>();
-  return assertFound(updated, 'Supplier not found');
+  return assertFound(
+    await SupplierModel.findByIdAndUpdate(_id, update, {
+      new: true
+    }).lean<SupplierDocument | null>(),
+    'Supplier not found'
+  );
 };

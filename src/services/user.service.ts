@@ -19,15 +19,14 @@ import { hashPassword } from '@/utils/password.util';
  * -> 409 if email already exists
  */
 export const createUser = async (data: UserCreateInput): Promise<UserDocument> => {
-  const exists: UserDocument | null = await UserModel.findOne({ email: data.email }).lean<UserDocument | null>();
-  if (exists) {
+  if (await UserModel.findOne({ email: data.email }).lean<UserDocument | null>()) {
     throw createError(HTTP_STATUS.CONFLICT, 'Email already exists');
   }
 
-  const hashedPassword: string = await hashPassword(data.password);
-  const user: UserDocument = new UserModel({ ...data, password: hashedPassword });
-
-  return assertExists(await user.save(), 'Failed to create user');
+  return assertExists(
+    await new UserModel({ ...data, password: await hashPassword(data.password) }).save(),
+    'Failed to create user'
+  );
 };
 
 /**
@@ -39,7 +38,7 @@ export const createUser = async (data: UserCreateInput): Promise<UserDocument> =
  * @returns Array of user documents
  */
 export const listUsers = async (): Promise<UserDocument[]> => {
-  return await UserModel.find().lean<UserDocument[]>();
+  return UserModel.find().lean<UserDocument[]>();
 };
 
 /**
@@ -52,8 +51,7 @@ export const listUsers = async (): Promise<UserDocument[]> => {
  * @returns The deleted user document
  */
 export const deleteUser = async (_id: UserDeletePayload['_id']): Promise<UserDocument> => {
-  const deleted: UserDocument | null = await UserModel.findByIdAndDelete(_id).lean<UserDocument | null>();
-  return assertFound(deleted, 'User not found');
+  return assertFound(await UserModel.findByIdAndDelete(_id).lean<UserDocument | null>(), 'User not found');
 };
 
 /**
@@ -68,9 +66,11 @@ export const deleteUser = async (_id: UserDeletePayload['_id']): Promise<UserDoc
  */
 export const editUser = async (data: UserEditInput): Promise<UserDocument> => {
   const { _id, ...update } = data;
-  const updated: UserDocument | null = await UserModel.findByIdAndUpdate(_id, update, {
-    new: true
-  }).lean<UserDocument | null>();
 
-  return assertFound(updated, 'User not found');
+  return assertFound(
+    await UserModel.findByIdAndUpdate(_id, update, {
+      new: true
+    }).lean<UserDocument | null>(),
+    'User not found'
+  );
 };

@@ -29,7 +29,7 @@ export default defineConfig([
       },
 
       parser: tsParser,
-      ecmaVersion: 2020,
+      ecmaVersion: 'latest',
       sourceType: 'module',
 
       parserOptions: {
@@ -40,31 +40,27 @@ export default defineConfig([
     settings: {
       'import/resolver': {
         typescript: {
+          alwaysTryTypes: true,
           project: './tsconfig.json'
         }
       }
     },
 
     rules: {
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_'
-        }
-      ],
-
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'prefer-const': 'warn',
-      '@typescript-eslint/no-explicit-any': 'error',
+      'no-useless-return': 'warn',
+      'no-useless-catch': 'warn',
+      'no-useless-concat': 'warn',
+      'no-useless-rename': 'warn',
+      'no-useless-computed-key': 'warn',
+
       eqeqeq: ['error', 'always'],
-      '@typescript-eslint/explicit-module-boundary-types': 'warn',
-
-      'no-console': [
-        'warn',
-        {
-          allow: ['info', 'warn', 'error']
-        }
-      ],
-
+      quotes: ['error', 'single'],
+      'no-unsafe-finally': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/explicit-function-return-type': [
         'warn',
         {
@@ -73,14 +69,30 @@ export default defineConfig([
         }
       ],
 
-      quotes: ['error', 'single'],
+      'no-var': 'error',
+      'no-shadow': 'error',
+      'no-return-await': 'error',
+      'no-extra-boolean-cast': 'warn',
+      '@typescript-eslint/no-inferrable-types': 'warn',
+      '@typescript-eslint/prefer-includes': 'warn',
+      '@typescript-eslint/prefer-string-starts-ends-with': 'warn',
+      '@typescript-eslint/prefer-optional-chain': 'warn',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+
+      eqeqeq: ['error', 'always'],
       'no-unsafe-finally': 'warn',
       '@typescript-eslint/no-floating-promises': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
 
-      'no-unused-vars': [
-        'error',
+      quotes: ['error', 'single'],
+      semi: ['error', 'always'],
+      'no-console': ['warn', { allow: ['info', 'warn', 'error'] }],
+
+      '@typescript-eslint/explicit-function-return-type': [
+        'warn',
         {
-          argsIgnorePattern: '^_'
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true
         }
       ]
     }

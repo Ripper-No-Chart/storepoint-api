@@ -18,29 +18,30 @@ import { Types } from 'mongoose';
  * @returns Created payment document
  */
 export const createPayment = async (data: CreatePaymentBody): Promise<PaymentDocument> => {
-  const foundSale: SaleDocument | null = await SaleModel.findById(data.saleId);
-  const sale: SaleDocument = assertFound(foundSale, 'Sale not found');
+  const sale: SaleDocument = assertFound(await SaleModel.findById(data.saleId), 'Sale not found');
 
-  const payment: PaymentDocument = await PaymentModel.create({
-    sale: data.saleId,
-    method: data.method,
-    amount: data.amount,
-    notes: data.notes
-  });
-
-  const aggregation: PaymentAggregationResult[] = await PaymentModel.aggregate<PaymentAggregationResult>([
-    { $match: { sale: new Types.ObjectId(data.saleId) } },
-    { $group: { _id: null, totalPaid: { $sum: '$amount' } } }
-  ]);
-
-  const totalPaid: number = aggregation[0]?.totalPaid ?? 0;
-
-  if (sale.total && totalPaid >= sale.total) {
+  if (
+    sale.total &&
+    ((
+      await PaymentModel.aggregate<PaymentAggregationResult>([
+        { $match: { sale: new Types.ObjectId(data.saleId) } },
+        { $group: { _id: null, totalPaid: { $sum: '$amount' } } }
+      ])
+    )[0]?.totalPaid ?? 0) >= sale.total
+  ) {
     sale.isPaid = true;
     await sale.save();
   }
 
-  return assertExists(await payment.save(), 'Failed to create payment');
+  return assertExists(
+    await PaymentModel.create({
+      sale: data.saleId,
+      method: data.method,
+      amount: data.amount,
+      notes: data.notes
+    }).then((p) => p.save()),
+    'Failed to create payment'
+  );
 };
 
 /**
@@ -54,5 +55,5 @@ export const createPayment = async (data: CreatePaymentBody): Promise<PaymentDoc
  * @returns Array of payment documents
  */
 export const listPaymentsBySale = async (data: ListPaymentsBySaleBody): Promise<PaymentDocument[]> => {
-  return await PaymentModel.find({ sale: data.saleId }).sort({ createdAt: -1 }).lean<PaymentDocument[]>();
+  return PaymentModel.find({ sale: data.saleId }).sort({ createdAt: -1 }).lean<PaymentDocument[]>();
 };

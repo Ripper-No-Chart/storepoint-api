@@ -1,6 +1,5 @@
 import {
   InventoryLowStockResponse,
-  LowStockItem,
   PaymentsReportResponse,
   PaymentSummary,
   SalesReportResponse,
@@ -18,41 +17,41 @@ import { assertFound } from '@/utils/assert.util';
 export const generateSalesReport = async (input: ReportSalesInput): Promise<SalesReportResponse> => {
   const { from, to, groupBy } = input;
 
-  const results: TimeSeriesPoint[] = await SaleModel.aggregate<TimeSeriesPoint>([
-    {
-      $match: {
-        createdAt: {
-          $gte: new Date(from),
-          $lte: new Date(to)
-        }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          $dateTrunc: {
-            date: '$createdAt',
-            unit: groupBy
+  return {
+    series: await SaleModel.aggregate<TimeSeriesPoint>([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(from),
+            $lte: new Date(to)
           }
-        },
-        total: { $sum: '$total' },
-        count: { $sum: 1 }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $dateTrunc: {
+              date: '$createdAt',
+              unit: groupBy
+            }
+          },
+          total: { $sum: '$total' },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          date: { $dateToString: { format: '%d-%m-%Y', date: '$_id' } },
+          total: 1,
+          count: 1
+        }
+      },
+      {
+        $sort: { date: 1 }
       }
-    },
-    {
-      $project: {
-        _id: 0,
-        date: { $dateToString: { format: '%d-%m-%Y', date: '$_id' } },
-        total: 1,
-        count: 1
-      }
-    },
-    {
-      $sort: { date: 1 }
-    }
-  ]);
-
-  return { series: results };
+    ])
+  };
 };
 
 /**
@@ -63,20 +62,21 @@ export const generateLowStockReport = async (
 ): Promise<InventoryLowStockResponse> => {
   const { threshold } = input;
 
-  const products: ProductLean[] = await ProductModel.find(
-    { stock: { $lte: threshold } },
-    { _id: 1, name: 1, stock: 1 }
-  ).lean<ProductLean[]>();
-
-  const items: LowStockItem[] = products.map((p) => ({
-    productId: p._id,
-    name: p.name,
-    stock: p.stock
-  }));
-
   return {
-    items,
-    total: items.length
+    items: (
+      await ProductModel.find({ stock: { $lte: threshold } }, { _id: 1, name: 1, stock: 1 }).lean<ProductLean[]>()
+    ).map((p) => ({
+      productId: p._id,
+      name: p.name,
+      stock: p.stock
+    })),
+    total: (
+      await ProductModel.find({ stock: { $lte: threshold } }, { _id: 1, name: 1, stock: 1 }).lean<ProductLean[]>()
+    ).map((p) => ({
+      productId: p._id,
+      name: p.name,
+      stock: p.stock
+    })).length
   };
 };
 
@@ -86,29 +86,68 @@ export const generateLowStockReport = async (
 export const generatePaymentsReport = async (input: ReportPaymentsInput): Promise<PaymentsReportResponse> => {
   const { method } = input;
 
-  const summary: PaymentSummary[] = await SaleModel.aggregate<PaymentSummary>([
-    { $match: { paymentType: method } },
-    {
-      $group: {
-        _id: '$paymentType',
-        total: { $sum: '$total' },
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        method: '$_id',
-        total: 1,
-        count: 1
-      }
-    }
-  ]);
-
-  const total: number = summary.length ? summary[0].total : 0;
-
   return {
-    summary: assertFound(summary, 'No payment data found'),
-    total
+    summary: assertFound(
+      await SaleModel.aggregate<PaymentSummary>([
+        { $match: { paymentType: method } },
+        {
+          $group: {
+            _id: '$paymentType',
+            total: { $sum: '$total' },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            method: '$_id',
+            total: 1,
+            count: 1
+          }
+        }
+      ]),
+      'No payment data found'
+    ),
+    total: (
+      await SaleModel.aggregate<PaymentSummary>([
+        { $match: { paymentType: method } },
+        {
+          $group: {
+            _id: '$paymentType',
+            total: { $sum: '$total' },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            method: '$_id',
+            total: 1,
+            count: 1
+          }
+        }
+      ])
+    ).length
+      ? (
+          await SaleModel.aggregate<PaymentSummary>([
+            { $match: { paymentType: method } },
+            {
+              $group: {
+                _id: '$paymentType',
+                total: { $sum: '$total' },
+                count: { $sum: 1 }
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                method: '$_id',
+                total: 1,
+                count: 1
+              }
+            }
+          ])
+        )[0].total
+      : 0
   };
 };

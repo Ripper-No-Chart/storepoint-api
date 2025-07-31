@@ -7,6 +7,7 @@
  * @usage
  * -> Backend & Frontend-safe via type & enum duality.
  */
+
 export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',

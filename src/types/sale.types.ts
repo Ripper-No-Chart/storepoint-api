@@ -29,3 +29,15 @@ export type GetSaleByIdBody = z.infer<typeof saleGetByIdSchema>;
  * -> products: Array<{ product: ObjectId, quantity: number }>
  */
 export type SaleLean = z.infer<typeof saleLeanSchema>;
+
+/**
+ * Minimal Sale structure for internal queries (RMA).
+ *
+ * @description
+ * -> Uses Zod schema to infer the structure of a lean sale document.
+ * -> Contains only the array of sold products (product and quantity).
+ *
+ * @fields
+ * -> products: Array<{ product: ObjectId, quantity: number }>
+ */
+export type SaleProductInput = CreateSaleBody['products'][number];

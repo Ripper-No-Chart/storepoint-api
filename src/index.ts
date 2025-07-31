@@ -25,7 +25,7 @@ export const buildApp: FastifyPluginAsync = async (fastify: FastifyInstance): Pr
   // Register core third-party plugins
   await fastify.register(cors);
   await fastify.register(jwt, {
-    secret: process.env.JWT_SECRET || 'changeme'
+    secret: process.env.JWT_SECRET ?? 'changeme'
   });
 
   // Register global middlewares

@@ -14,8 +14,7 @@ import { assertExists, assertFound } from '@/utils/assert.util';
  * @returns Created category document
  */
 export const createCategory = async (data: CategoryCreateInput): Promise<CategoryDocument> => {
-  const category: CategoryDocument = new CategoryModel(data);
-  return assertExists(await category.save(), 'Failed to create category');
+  return assertExists(await new CategoryModel(data).save(), 'Failed to create category');
 };
 
 /**
@@ -27,7 +26,7 @@ export const createCategory = async (data: CategoryCreateInput): Promise<Categor
  * @returns Array of category documents
  */
 export const listCategories = async (): Promise<CategoryDocument[]> => {
-  return await CategoryModel.find().lean<CategoryDocument[]>();
+  return CategoryModel.find().lean<CategoryDocument[]>();
 };
 
 /**
@@ -41,8 +40,7 @@ export const listCategories = async (): Promise<CategoryDocument[]> => {
  * @returns Deleted category document
  */
 export const deleteCategory = async (_id: CategoryDeletePayload['_id']): Promise<CategoryDocument> => {
-  const deleted: CategoryDocument | null = await CategoryModel.findByIdAndDelete(_id).lean<CategoryDocument | null>();
-  return assertFound(deleted, 'Category not found');
+  return assertFound(await CategoryModel.findByIdAndDelete(_id).lean<CategoryDocument | null>(), 'Category not found');
 };
 
 /**
@@ -57,8 +55,10 @@ export const deleteCategory = async (_id: CategoryDeletePayload['_id']): Promise
  */
 export const editCategory = async (data: CategoryEditInput): Promise<CategoryDocument> => {
   const { _id, ...update } = data;
-  const updated: CategoryDocument | null = await CategoryModel.findByIdAndUpdate(_id, update, {
-    new: true
-  }).lean<CategoryDocument | null>();
-  return assertFound(updated, 'Category not found');
+  return assertFound(
+    await CategoryModel.findByIdAndUpdate(_id, update, {
+      new: true
+    }).lean<CategoryDocument | null>(),
+    'Category not found'
+  );
 };

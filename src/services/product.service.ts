@@ -13,8 +13,7 @@ import { assertExists, assertFound } from '@/utils/assert.util';
  * @returns Created product document
  */
 export const createProduct = async (data: ProductCreateInput): Promise<ProductDocument> => {
-  const product: ProductDocument = new ProductModel(data);
-  return assertExists(await product.save(), 'Failed to create product');
+  return assertExists(await new ProductModel(data).save(), 'Failed to create product');
 };
 
 /**
@@ -26,7 +25,7 @@ export const createProduct = async (data: ProductCreateInput): Promise<ProductDo
  * @returns Array of product documents
  */
 export const listProducts = async (): Promise<ProductDocument[]> => {
-  return await ProductModel.find().lean<ProductDocument[]>();
+  return ProductModel.find().lean<ProductDocument[]>();
 };
 
 /**
@@ -40,8 +39,7 @@ export const listProducts = async (): Promise<ProductDocument[]> => {
  * @returns Deleted product document
  */
 export const deleteProduct = async (_id: ProductDeletePayload['_id']): Promise<ProductDocument> => {
-  const deleted: ProductDocument | null = await ProductModel.findByIdAndDelete(_id).lean<ProductDocument | null>();
-  return assertFound(deleted, 'Product not found');
+  return assertFound(await ProductModel.findByIdAndDelete(_id).lean<ProductDocument | null>(), 'Product not found');
 };
 
 /**
@@ -56,8 +54,10 @@ export const deleteProduct = async (_id: ProductDeletePayload['_id']): Promise<P
  */
 export const editProduct = async (data: ProductEditInput): Promise<ProductDocument> => {
   const { _id, ...update } = data;
-  const updated: ProductDocument | null = await ProductModel.findByIdAndUpdate(_id, update, {
-    new: true
-  }).lean<ProductDocument | null>();
-  return assertFound(updated, 'Product not found');
+  return assertFound(
+    await ProductModel.findByIdAndUpdate(_id, update, {
+      new: true
+    }).lean<ProductDocument | null>(),
+    'Product not found'
+  );
 };

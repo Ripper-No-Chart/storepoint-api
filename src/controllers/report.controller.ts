@@ -1,4 +1,3 @@
-import { InventoryLowStockResponse, PaymentsReportResponse, SalesReportResponse } from '@/interfaces/report.interface';
 import { reportInventoryLowStockSchema, reportPaymentsSchema, reportSalesSchema } from '@/schemas/report.schema';
 import * as reportService from '@/services/report.service';
 import { ReportInventoryLowStockInput, ReportPaymentsInput, ReportSalesInput } from '@/types/report.types';
@@ -22,9 +21,7 @@ export const reportSales = async (
   request: FastifyRequest<{ Body: ReportSalesInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: ReportSalesInput = reportSalesSchema.parse(request.body);
-  const result: SalesReportResponse = await reportService.generateSalesReport(data);
-  sendSuccess(reply, result);
+  sendSuccess(reply, await reportService.generateSalesReport(reportSalesSchema.parse(request.body)));
 };
 
 /**
@@ -43,9 +40,7 @@ export const reportInventoryLowStock = async (
   request: FastifyRequest<{ Body: ReportInventoryLowStockInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: ReportInventoryLowStockInput = reportInventoryLowStockSchema.parse(request.body);
-  const result: InventoryLowStockResponse = await reportService.generateLowStockReport(data);
-  sendSuccess(reply, result);
+  sendSuccess(reply, await reportService.generateLowStockReport(reportInventoryLowStockSchema.parse(request.body)));
 };
 
 /**
@@ -65,7 +60,5 @@ export const reportPayments = async (
   request: FastifyRequest<{ Body: ReportPaymentsInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: ReportPaymentsInput = reportPaymentsSchema.parse(request.body);
-  const result: PaymentsReportResponse = await reportService.generatePaymentsReport(data);
-  sendSuccess(reply, result);
+  sendSuccess(reply, await reportService.generatePaymentsReport(reportPaymentsSchema.parse(request.body)));
 };

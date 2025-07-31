@@ -1,5 +1,4 @@
 import { HTTP_STATUS } from '@/constants/http.constants';
-import { UserPayload } from '@/interfaces/auth.interface';
 import { isUserPayload } from '@/utils/guard.util';
 import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { Types } from 'mongoose';
@@ -32,18 +31,14 @@ export const authPlugin: FastifyPluginAsync = async (fastify): Promise<void> => 
     try {
       await request.jwtVerify();
 
-      const rawUser: unknown = request.user;
-
-      if (!isUserPayload(rawUser)) {
+      if (!isUserPayload(request.user)) {
         return reply.status(HTTP_STATUS.UNAUTHORIZED).send({ message: 'Unauthorized: invalid user payload' });
       }
 
-      const user: UserPayload = rawUser;
-
       request.user = {
-        _id: new Types.ObjectId(user._id),
-        email: user.email,
-        role: user.role
+        _id: new Types.ObjectId(request.user._id),
+        email: request.user.email,
+        role: request.user.role
       };
     } catch (error) {
       reply.status(HTTP_STATUS.UNAUTHORIZED).send({

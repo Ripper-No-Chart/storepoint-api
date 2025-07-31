@@ -1,4 +1,3 @@
-import { PurchaseDocument } from '@/interfaces/purchase.interface';
 import { purchaseCreateSchema, purchaseDeleteSchema, purchaseEditSchema } from '@/schemas/purchase.schema';
 import * as purchaseService from '@/services/purchase.service';
 import { PurchaseCreateInput, PurchaseDeletePayload, PurchaseEditInput } from '@/types/purchase.types';
@@ -18,8 +17,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
  * // none
  */
 export const listPurchases = async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const purchases: PurchaseDocument[] = await purchaseService.listPurchases();
-  sendSuccess(reply, purchases);
+  sendSuccess(reply, await purchaseService.listPurchases());
 };
 
 /**
@@ -39,9 +37,11 @@ export const createPurchase = async (
   request: FastifyRequest<{ Body: PurchaseCreateInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: PurchaseCreateInput = purchaseCreateSchema.parse(request.body);
-  const purchase: PurchaseDocument = await purchaseService.createPurchase(data);
-  sendSuccess(reply, purchase, 'Purchase created');
+  sendSuccess(
+    reply,
+    await purchaseService.createPurchase(purchaseCreateSchema.parse(request.body)),
+    'Purchase created'
+  );
 };
 
 /**
@@ -61,8 +61,7 @@ export const deletePurchase = async (
   reply: FastifyReply
 ): Promise<void> => {
   const { _id }: PurchaseDeletePayload = purchaseDeleteSchema.parse(request.body);
-  const deleted: PurchaseDocument = await purchaseService.deletePurchase(_id);
-  sendSuccess(reply, deleted, 'Purchase deleted');
+  sendSuccess(reply, await purchaseService.deletePurchase(_id), 'Purchase deleted');
 };
 
 /**
@@ -83,7 +82,5 @@ export const editPurchase = async (
   request: FastifyRequest<{ Body: PurchaseEditInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: PurchaseEditInput = purchaseEditSchema.parse(request.body);
-  const updated: PurchaseDocument = await purchaseService.editPurchase(data);
-  sendSuccess(reply, updated, 'Purchase updated');
+  sendSuccess(reply, await purchaseService.editPurchase(purchaseEditSchema.parse(request.body)), 'Purchase updated');
 };

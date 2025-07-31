@@ -14,8 +14,7 @@ import { assertExists, assertFound } from '@/utils/assert.util';
  * @returns Created purchase document
  */
 export const createPurchase = async (data: PurchaseCreateInput): Promise<PurchaseDocument> => {
-  const purchase: PurchaseDocument = new PurchaseModel(data);
-  return assertExists(await purchase.save(), 'Failed to create purchase');
+  return assertExists(await new PurchaseModel(data).save(), 'Failed to create purchase');
 };
 
 /**
@@ -27,7 +26,7 @@ export const createPurchase = async (data: PurchaseCreateInput): Promise<Purchas
  * @returns Array of purchase documents
  */
 export const listPurchases = async (): Promise<PurchaseDocument[]> => {
-  return await PurchaseModel.find().lean<PurchaseDocument[]>();
+  return PurchaseModel.find().lean<PurchaseDocument[]>();
 };
 
 /**
@@ -41,8 +40,7 @@ export const listPurchases = async (): Promise<PurchaseDocument[]> => {
  * @returns Deleted purchase document
  */
 export const deletePurchase = async (_id: PurchaseDeletePayload['_id']): Promise<PurchaseDocument> => {
-  const deleted: PurchaseDocument | null = await PurchaseModel.findByIdAndDelete(_id).lean<PurchaseDocument | null>();
-  return assertFound(deleted, 'Purchase not found');
+  return assertFound(await PurchaseModel.findByIdAndDelete(_id).lean<PurchaseDocument | null>(), 'Purchase not found');
 };
 
 /**
@@ -57,8 +55,10 @@ export const deletePurchase = async (_id: PurchaseDeletePayload['_id']): Promise
  */
 export const editPurchase = async (data: PurchaseEditInput): Promise<PurchaseDocument> => {
   const { _id, ...update } = data;
-  const updated: PurchaseDocument | null = await PurchaseModel.findByIdAndUpdate(_id, update, {
-    new: true
-  }).lean<PurchaseDocument | null>();
-  return assertFound(updated, 'Purchase not found');
+  return assertFound(
+    await PurchaseModel.findByIdAndUpdate(_id, update, {
+      new: true
+    }).lean<PurchaseDocument | null>(),
+    'Purchase not found'
+  );
 };

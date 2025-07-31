@@ -1,11 +1,9 @@
-import { RMADocument } from '@/interfaces/rma.interface';
 import { rmaCreateSchema, rmaListSchema } from '@/schemas/rma.schema';
 import * as rmaServices from '@/services/rma.service';
 import { CreateRMABody, ListRMAsBySaleBody } from '@/types/rma.types';
 import { getUserIdOrThrow } from '@/utils/get-user.util';
 import { sendSuccess } from '@/utils/response.util';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Types } from 'mongoose';
 
 /**
  * Registers a new RMA (return).
@@ -21,10 +19,11 @@ export const createRMA = async (
   request: FastifyRequest<{ Body: CreateRMABody }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const userId: Types.ObjectId = getUserIdOrThrow(request);
-  const data: CreateRMABody = rmaCreateSchema.parse(request.body);
-  const rma: RMADocument = await rmaServices.createRMA(data, userId);
-  sendSuccess(reply, rma, 'RMA created');
+  sendSuccess(
+    reply,
+    await rmaServices.createRMA(rmaCreateSchema.parse(request.body), getUserIdOrThrow(request)),
+    'RMA created'
+  );
 };
 
 /**
@@ -41,7 +40,5 @@ export const listRMAsBySale = async (
   request: FastifyRequest<{ Body: ListRMAsBySaleBody }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: ListRMAsBySaleBody = rmaListSchema.parse(request.body);
-  const rmas: RMADocument[] = await rmaServices.listRMAsBySale(data);
-  sendSuccess(reply, rmas, 'RMAs retrieved');
+  sendSuccess(reply, await rmaServices.listRMAsBySale(rmaListSchema.parse(request.body)), 'RMAs retrieved');
 };

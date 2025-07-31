@@ -1,11 +1,8 @@
-import { SaleDocument } from '@/interfaces/sale.interface';
 import { saleCreateSchema, saleGetByIdSchema } from '@/schemas/sale.schema';
 import * as saleServices from '@/services/sale.service';
-import { CreateSaleBody, GetSaleByIdBody } from '@/types/sale.types';
 import { getUserIdOrThrow } from '@/utils/get-user.util';
 import { sendSuccess } from '@/utils/response.util';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Types } from 'mongoose';
 
 /**
  * Registers a new sale.
@@ -23,10 +20,11 @@ import { Types } from 'mongoose';
  * -> notes    – Optional observations
  */
 export const createSale = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const userId: Types.ObjectId = getUserIdOrThrow(request);
-  const data: CreateSaleBody = saleCreateSchema.parse(request.body);
-  const sale: SaleDocument = await saleServices.createSale(data, userId);
-  sendSuccess(reply, sale, 'Sale created');
+  sendSuccess(
+    reply,
+    await saleServices.createSale(saleCreateSchema.parse(request.body), getUserIdOrThrow(request)),
+    'Sale created'
+  );
 };
 
 /**
@@ -44,8 +42,7 @@ export const createSale = async (request: FastifyRequest, reply: FastifyReply): 
  * -> cashierId – Optional user filter
  */
 export const listSales = async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const sales: SaleDocument[] = await saleServices.listSales();
-  sendSuccess(reply, sales, 'Sales retrieved');
+  sendSuccess(reply, await saleServices.listSales(), 'Sales retrieved');
 };
 
 /**
@@ -61,7 +58,5 @@ export const listSales = async (_request: FastifyRequest, reply: FastifyReply): 
  * -> id – Sale ID
  */
 export const getSaleById = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const data: GetSaleByIdBody = saleGetByIdSchema.parse(request.body);
-  const sale: SaleDocument = await saleServices.getSaleById(data.saleId);
-  sendSuccess(reply, sale, 'Sale retrieved');
+  sendSuccess(reply, await saleServices.getSaleById(saleGetByIdSchema.parse(request.body).saleId), 'Sale retrieved');
 };

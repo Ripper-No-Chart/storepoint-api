@@ -1,10 +1,10 @@
 import { HTTP_STATUS } from '@/constants/http.constants';
 import { AuditLogModel } from '@/models/audit.model';
 import { authUserSchema } from '@/schemas/auth.schema';
-import { AuditLogSchema } from '@/types/audit.types';
 import { AuthUser } from '@/types/auth.types';
 import { createError } from '@/utils/error.util';
 import { FastifyReply, FastifyRequest } from 'fastify';
+import z from 'zod';
 
 /**
  * Middleware to persist audit logs for user actions.
@@ -16,26 +16,24 @@ import { FastifyReply, FastifyRequest } from 'fastify';
  *
  * @returns Fastify preHandler
  */
-export const auditMiddleware = async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
-  const rawUser: unknown = request.user;
+export const auditMiddleware = async (req: FastifyRequest, _res: FastifyReply): Promise<void> => {
+  const parsed: z.SafeParseReturnType<unknown, AuthUser> = authUserSchema.safeParse(req.user);
+  if (!parsed.success) return;
 
-  const parseResult = authUserSchema.safeParse(rawUser);
-  if (!parseResult.success) return;
-
-  const user: AuthUser = parseResult.data;
-  const endpoint: string = (request as any).routerPath || request.url;
-
-  const auditPayload: AuditLogSchema = {
-    endpoint,
-    method: request.method,
-    userId: String(user._id),
-    userName: user.name,
-    createdAt: new Date(),
-    payload: request.body
-  };
+  const endpoint: unknown =
+    typeof (req as unknown as Record<string, unknown>).routerPath === 'string'
+      ? (req as unknown as Record<string, unknown>).routerPath
+      : req.url;
 
   try {
-    await AuditLogModel.create(auditPayload);
+    await AuditLogModel.create({
+      endpoint,
+      method: req.method,
+      userId: String(parsed.data._id),
+      userName: parsed.data.name,
+      createdAt: new Date(),
+      payload: req.body
+    });
   } catch {
     throw createError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Audit log failed');
   }

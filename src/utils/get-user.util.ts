@@ -14,14 +14,11 @@ import { isUserPayload } from '@/utils/guard.util';
  * @throws 401 if user is missing or invalid
  */
 export function getUserOrThrow(request: FastifyRequest): UserPayload {
-  const rawUser: unknown = request.user;
-
-  if (!isUserPayload(rawUser)) {
+  if (!isUserPayload(request.user)) {
     throw createError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
   }
 
-  const user: UserPayload = rawUser;
-  return user;
+  return request.user;
 }
 
 /**
@@ -33,7 +30,5 @@ export function getUserOrThrow(request: FastifyRequest): UserPayload {
  * @throws 401 if user or _id is missing or invalid
  */
 export function getUserIdOrThrow(request: FastifyRequest): Types.ObjectId {
-  const user: UserPayload = getUserOrThrow(request);
-  const userId: Types.ObjectId = new Types.ObjectId(user._id);
-  return userId;
+  return new Types.ObjectId(getUserOrThrow(request)._id);
 }

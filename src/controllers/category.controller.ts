@@ -1,4 +1,3 @@
-import { CategoryDocument } from '@/interfaces/category.interface';
 import { categoryCreateSchema, categoryDeleteSchema, categoryEditSchema } from '@/schemas/category.schema';
 import * as categoryService from '@/services/category.service';
 import { CategoryCreateInput, CategoryDeletePayload, CategoryEditInput } from '@/types/category.types';
@@ -19,8 +18,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
  */
 
 export const listCategories = async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const categories: CategoryDocument[] = await categoryService.listCategories();
-  sendSuccess(reply, categories);
+  sendSuccess(reply, await categoryService.listCategories());
 };
 
 /**
@@ -33,7 +31,7 @@ export const listCategories = async (_request: FastifyRequest, reply: FastifyRep
  * -> Requires name and optional description.
  *
  * @fields
- * -> name – Category name  
+ * -> name – Category name
  * -> description – Optional
  */
 
@@ -41,9 +39,11 @@ export const createCategory = async (
   request: FastifyRequest<{ Body: CategoryCreateInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: CategoryCreateInput = categoryCreateSchema.parse(request.body);
-  const category: CategoryDocument = await categoryService.createCategory(data);
-  sendSuccess(reply, category, 'Category created');
+  sendSuccess(
+    reply,
+    await categoryService.createCategory(categoryCreateSchema.parse(request.body)),
+    'Category created'
+  );
 };
 
 /**
@@ -64,8 +64,7 @@ export const deleteCategory = async (
   reply: FastifyReply
 ): Promise<void> => {
   const { _id }: CategoryDeletePayload = categoryDeleteSchema.parse(request.body);
-  const deleted: CategoryDocument = await categoryService.deleteCategory(_id);
-  sendSuccess(reply, deleted, 'Category deleted');
+  sendSuccess(reply, await categoryService.deleteCategory(_id), 'Category deleted');
 };
 
 /**
@@ -78,8 +77,8 @@ export const deleteCategory = async (
  * -> Can modify name or description.
  *
  * @fields
- * -> id – Category ID  
- * -> name – New name  
+ * -> id – Category ID
+ * -> name – New name
  * -> description – New description
  */
 
@@ -87,7 +86,5 @@ export const editCategory = async (
   request: FastifyRequest<{ Body: CategoryEditInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: CategoryEditInput = categoryEditSchema.parse(request.body);
-  const updated: CategoryDocument = await categoryService.editCategory(data);
-  sendSuccess(reply, updated, 'Category updated');
+  sendSuccess(reply, await categoryService.editCategory(categoryEditSchema.parse(request.body)), 'Category updated');
 };

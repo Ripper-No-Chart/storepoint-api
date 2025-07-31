@@ -1,9 +1,8 @@
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { SupplierDocument } from '@/interfaces/supplier.interface';
 import { supplierCreateSchema, supplierDeleteSchema, supplierEditSchema } from '@/schemas/supplier.schema';
 import * as supplierService from '@/services/supplier.service';
-import { SupplierCreateInput, SupplierDeletePayload, SupplierEditInput } from '@/types/supplier.types';
+import { SupplierCreateInput, SupplierDeletePayload } from '@/types/supplier.types';
 import { sendSuccess } from '@/utils/response.util';
+import { FastifyReply, FastifyRequest } from 'fastify';
 
 /**
  * Lists all suppliers.
@@ -18,8 +17,7 @@ import { sendSuccess } from '@/utils/response.util';
  * // none
  */
 export const listSuppliers = async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const suppliers: SupplierDocument[] = await supplierService.listSuppliers();
-  sendSuccess(reply, suppliers);
+  sendSuccess(reply, await supplierService.listSuppliers());
 };
 
 /**
@@ -40,9 +38,11 @@ export const createSupplier = async (
   request: FastifyRequest<{ Body: SupplierCreateInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: SupplierCreateInput = supplierCreateSchema.parse(request.body);
-  const supplier: SupplierDocument = await supplierService.createSupplier(data);
-  sendSuccess(reply, supplier, 'Supplier created');
+  sendSuccess(
+    reply,
+    await supplierService.createSupplier(supplierCreateSchema.parse(request.body)),
+    'Supplier created'
+  );
 };
 
 /**
@@ -60,8 +60,7 @@ export const createSupplier = async (
 
 export const deleteSupplier = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
   const { _id }: SupplierDeletePayload = supplierDeleteSchema.parse(request.body);
-  const deleted: SupplierDocument = await supplierService.deleteSupplier(_id);
-  sendSuccess(reply, deleted, 'Supplier deleted');
+  sendSuccess(reply, await supplierService.deleteSupplier(_id), 'Supplier deleted');
 };
 
 /**
@@ -80,7 +79,5 @@ export const deleteSupplier = async (request: FastifyRequest, reply: FastifyRepl
  */
 
 export const editSupplier = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const data: SupplierEditInput = supplierEditSchema.parse(request.body);
-  const updated: SupplierDocument = await supplierService.editSupplier(data);
-  sendSuccess(reply, updated, 'Supplier updated');
+  sendSuccess(reply, await supplierService.editSupplier(supplierEditSchema.parse(request.body)), 'Supplier updated');
 };

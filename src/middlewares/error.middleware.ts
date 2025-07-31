@@ -17,11 +17,9 @@ import { HTTP_STATUS } from '@/constants/http.constants';
  * @param reply - Fastify reply instance used to send the response
  */
 export const errorHandler = (error: FastifyError, _request: FastifyRequest, reply: FastifyReply): void => {
-  const statusCode: number = error.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR;
-
-  reply.status(statusCode).send({
+  reply.status(error.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
     success: false,
     message: error.message,
-    statusCode
+    statusCode: error.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR
   });
 };

@@ -1,13 +1,10 @@
 import { buildApp } from '@/index';
 import chalk from 'chalk';
 import { config } from 'dotenv';
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
 import mongoose from 'mongoose';
 
 config();
-
-const PORT: number = Number(process.env.PORT) || 3000;
-const MONGO_URI: string = process.env.MONGO_URI || '';
 
 /**
  * Application entry point.
@@ -23,7 +20,27 @@ const MONGO_URI: string = process.env.MONGO_URI || '';
  */
 const start = async (): Promise<void> => {
   try {
-    const app: FastifyInstance = Fastify({
+    await mongoose.connect(process.env.MONGO_URI ?? '');
+    console.info(chalk.cyan('✅ Connected to MongoDB'));
+
+    await buildApp(
+      Fastify({
+        logger: {
+          transport: {
+            target: 'pino-pretty',
+            options: {
+              translateTime: 'SYS:standard',
+              ignore: 'pid,hostname',
+              singleLine: true
+            }
+          }
+        }
+      }),
+      {}
+    );
+    console.info(chalk.cyan('✅ App built'));
+
+    await Fastify({
       logger: {
         transport: {
           target: 'pino-pretty',
@@ -34,15 +51,7 @@ const start = async (): Promise<void> => {
           }
         }
       }
-    });
-
-    await mongoose.connect(MONGO_URI);
-    console.info(chalk.cyan('✅ Connected to MongoDB'));
-
-    await buildApp(app, {});
-    console.info(chalk.cyan('✅ App built'));
-
-    await app.listen({ port: PORT });
+    }).listen({ port: Number(process.env.PORT) || 3000 });
   } catch (error) {
     console.error(chalk.red('❌ Failed to start server:'), (error as Error).message);
     process.exit(1);

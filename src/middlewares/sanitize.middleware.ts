@@ -10,13 +10,11 @@ import { FastifyPluginAsync } from 'fastify';
  */
 export const sanitizePlugin: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preValidation', async (request) => {
-    const body: Record<string, unknown> = request.body as Record<string, unknown>;
-
-    if (body && typeof body === 'object') {
-      for (const key in body) {
-        const value = body[key];
+    if ((request.body as Record<string, unknown>) && typeof (request.body as Record<string, unknown>) === 'object') {
+      for (const key in request.body as Record<string, unknown>) {
+        const value: unknown = (request.body as Record<string, unknown>)[key];
         if (typeof value === 'string') {
-          body[key] = value.trim();
+          (request.body as Record<string, unknown>)[key] = value.trim();
         }
       }
     }

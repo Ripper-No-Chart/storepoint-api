@@ -1,7 +1,5 @@
 import { HTTP_STATUS } from '@/constants/http.constants';
 import { Operation } from '@/constants/roles.constants';
-import { UserRole } from '@/constants/user.constants';
-import { UserPayload } from '@/interfaces/auth.interface';
 import { RolePermissions } from '@/middlewares/permissions.map';
 import { createError } from '@/utils/error.util';
 import { isUserPayload } from '@/utils/guard.util';
@@ -20,23 +18,15 @@ import { FastifyReply, FastifyRequest } from 'fastify';
  */
 export const permit = (operation: Operation) => {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    const rawUser: unknown = request.user;
-
-    if (!isUserPayload(rawUser)) {
+    if (!isUserPayload(request.user)) {
       return reply.status(HTTP_STATUS.FORBIDDEN).send(createError(HTTP_STATUS.FORBIDDEN, 'Invalid user payload'));
     }
 
-    const user: UserPayload = rawUser;
-
-    if (!user.role) {
+    if (!request.user.role) {
       return reply.status(HTTP_STATUS.FORBIDDEN).send(createError(HTTP_STATUS.FORBIDDEN, 'Missing user role'));
     }
 
-    const role: UserRole = user.role;
-    const permissions: Operation[] = RolePermissions[role] ?? [];
-    const isAllowed: boolean = permissions.includes(operation);
-
-    if (!isAllowed) {
+    if (!(RolePermissions[request.user.role] ?? []).includes(operation)) {
       return reply.status(HTTP_STATUS.FORBIDDEN).send(createError(HTTP_STATUS.FORBIDDEN, 'Operation not permitted'));
     }
   };

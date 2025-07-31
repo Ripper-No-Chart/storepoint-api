@@ -11,8 +11,7 @@ import bcrypt from 'bcrypt';
  * @returns A hashed password string
  */
 export const hashPassword = async (plainPassword: string): Promise<string> => {
-  const saltRounds: number = 10;
-  return await bcrypt.hash(plainPassword, saltRounds);
+  return bcrypt.hash(plainPassword, 10);
 };
 
 /**
@@ -27,7 +26,7 @@ export const hashPassword = async (plainPassword: string): Promise<string> => {
  * @returns Whether the passwords match
  */
 export const comparePassword = async (plainPassword: string, hashedPassword: string): Promise<boolean> => {
-  return await bcrypt.compare(plainPassword, hashedPassword);
+  return bcrypt.compare(plainPassword, hashedPassword);
 };
 
 /**
@@ -46,7 +45,5 @@ export const comparePassword = async (plainPassword: string, hashedPassword: str
  */
 export const validatePassword = (value: string): boolean => {
   // Regex for validating password
-  const regex: RegExp = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
-
-  return regex.test(value);
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/.test(value);
 };

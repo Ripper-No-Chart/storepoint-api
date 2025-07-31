@@ -21,20 +21,18 @@ import { generateToken } from '@/utils/token.util';
  * -> Conflict error if email already exists
  */
 export const register = async (data: RegisterInput): Promise<UserDocument> => {
-  const exists: UserDocument | null = await UserModel.findOne({ email: data.email }).lean<UserDocument | null>();
+  if (await UserModel.findOne({ email: data.email }).lean<UserDocument | null>())
+    throw createError(HTTP_STATUS.CONFLICT, 'Email already registered');
 
-  if (exists) throw createError(HTTP_STATUS.CONFLICT, 'Email already registered');
-
-  const hashedPassword: string = await hashPassword(data.password);
-
-  const user: UserDocument = new UserModel({
-    name: data.name,
-    email: data.email,
-    password: hashedPassword,
-    role: data.role
-  });
-
-  return assertExists(await user.save(), 'Failed to create user');
+  return assertExists(
+    await new UserModel({
+      name: data.name,
+      email: data.email,
+      password: await hashPassword(data.password),
+      role: data.role
+    }).save(),
+    'Failed to create user'
+  );
 };
 
 /**
@@ -51,14 +49,24 @@ export const register = async (data: RegisterInput): Promise<UserDocument> => {
  * -> Unauthorized error if credentials are invalid
  */
 export const login = async (data: LoginInput): Promise<{ token: string; user: UserDocument }> => {
-  const foundUser: UserDocument | null = await UserModel.findOne({ email: data.email }).lean<UserDocument | null>();
-  const user: UserDocument = assertFound(foundUser, 'Invalid credentials');
+  if (
+    !(await comparePassword(
+      data.password,
+      assertFound(await UserModel.findOne({ email: data.email }).lean<UserDocument | null>(), 'Invalid credentials')
+        .password
+    ))
+  )
+    throw createError(HTTP_STATUS.UNAUTHORIZED, 'Invalid credentials');
 
-  const validPassword: boolean = await comparePassword(data.password, user.password);
-  if (!validPassword) throw createError(HTTP_STATUS.UNAUTHORIZED, 'Invalid credentials');
-
-  const token: string = generateToken(user._id, user.role);
-  return { token, user };
+  return {
+    token: generateToken(
+      assertFound(await UserModel.findOne({ email: data.email }).lean<UserDocument | null>(), 'Invalid credentials')
+        ._id,
+      assertFound(await UserModel.findOne({ email: data.email }).lean<UserDocument | null>(), 'Invalid credentials')
+        .role
+    ),
+    user: assertFound(await UserModel.findOne({ email: data.email }).lean<UserDocument | null>(), 'Invalid credentials')
+  };
 };
 
 /**
@@ -74,6 +82,5 @@ export const login = async (data: LoginInput): Promise<{ token: string; user: Us
  * -> 404 Not Found if user is not in database
  */
 export const getUserByIdOrFail = async (userId: Types.ObjectId): Promise<UserDocument> => {
-  const found: UserDocument | null = await UserModel.findById(userId).lean<UserDocument | null>();
-  return assertFound(found, 'User not found');
+  return assertFound(await UserModel.findById(userId).lean<UserDocument | null>(), 'User not found');
 };

@@ -20,20 +20,19 @@ import { Types } from 'mongoose';
 export const createSale = async (data: CreateSaleBody, cashierId: Types.ObjectId): Promise<SaleDocument> => {
   await adjustStockOnSale(data.products);
 
-  const total: number = data.products.reduce((acc, p) => acc + p.price * p.quantity, 0);
-
-  const sale: SaleDocument = new SaleModel({
-    cashier: cashierId,
-    products: data.products.map((p: CreateSaleBody['products'][number]) => ({
-      product: new Types.ObjectId(p.productId),
-      quantity: p.quantity,
-      price: p.price
-    })),
-    total,
-    paymentType: data.paymentType
-  });
-
-  return assertExists(await sale.save(), 'Failed to create sale');
+  return assertExists(
+    await new SaleModel({
+      cashier: cashierId,
+      products: data.products.map((p: CreateSaleBody['products'][number]) => ({
+        product: new Types.ObjectId(p.productId),
+        quantity: p.quantity,
+        price: p.price
+      })),
+      total: data.products.reduce((acc, p) => acc + p.price * p.quantity, 0),
+      paymentType: data.paymentType
+    }).save(),
+    'Failed to create sale'
+  );
 };
 
 /**
@@ -42,7 +41,7 @@ export const createSale = async (data: CreateSaleBody, cashierId: Types.ObjectId
  * @returns Array of Sale documents with related product and cashier info
  */
 export const listSales = async (): Promise<SaleDocument[]> => {
-  return await SaleModel.find()
+  return SaleModel.find()
     .populate('cashier', 'name email')
     .populate('products.product', 'name price')
     .sort({ createdAt: -1 })
@@ -56,10 +55,11 @@ export const listSales = async (): Promise<SaleDocument[]> => {
  * @returns Sale document or throws if not found
  */
 export const getSaleById = async (saleId: Types.ObjectId): Promise<SaleDocument> => {
-  const sale: SaleDocument | null = await SaleModel.findById(saleId)
-    .populate('cashier', 'name email')
-    .populate('products.product', 'name price')
-    .lean<SaleDocument | null>();
-
-  return assertExists(sale, 'Sale not found');
+  return assertExists(
+    await SaleModel.findById(saleId)
+      .populate('cashier', 'name email')
+      .populate('products.product', 'name price')
+      .lean<SaleDocument | null>(),
+    'Sale not found'
+  );
 };

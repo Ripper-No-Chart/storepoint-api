@@ -1,10 +1,8 @@
-import { FastifyReply, FastifyRequest } from 'fastify';
-
-import { UserDocument } from '@/interfaces/user.interface';
 import { userCreateSchema, userDeleteSchema, userEditSchema } from '@/schemas/user.schema';
 import * as userService from '@/services/user.service';
 import { UserCreateInput, UserDeletePayload, UserEditInput } from '@/types/user.types';
 import { sendSuccess } from '@/utils/response.util';
+import { FastifyReply, FastifyRequest } from 'fastify';
 
 /**
  * Lists all users.
@@ -20,8 +18,7 @@ import { sendSuccess } from '@/utils/response.util';
  * -> none – This endpoint does not require any input fields.
  */
 export const listUsers = async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const users: UserDocument[] = await userService.listUsers();
-  sendSuccess(reply, users);
+  sendSuccess(reply, await userService.listUsers());
 };
 
 /**
@@ -39,9 +36,7 @@ export const createUser = async (
   request: FastifyRequest<{ Body: UserCreateInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const body: UserCreateInput = userCreateSchema.parse(request.body);
-  const user: UserDocument = await userService.createUser(body);
-  sendSuccess(reply, user, 'User created');
+  sendSuccess(reply, await userService.createUser(userCreateSchema.parse(request.body)), 'User created');
 };
 
 /**
@@ -63,8 +58,7 @@ export const deleteUser = async (
   reply: FastifyReply
 ): Promise<void> => {
   const { _id }: UserDeletePayload = userDeleteSchema.parse(request.body);
-  const deleted: UserDocument = await userService.deleteUser(_id);
-  sendSuccess(reply, deleted, 'User deleted');
+  sendSuccess(reply, await userService.deleteUser(_id), 'User deleted');
 };
 
 /**
@@ -86,7 +80,5 @@ export const editUser = async (
   request: FastifyRequest<{ Body: UserEditInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: UserEditInput = userEditSchema.parse(request.body);
-  const updated: UserDocument = await userService.editUser(data);
-  sendSuccess(reply, updated, 'User updated');
+  sendSuccess(reply, await userService.editUser(userEditSchema.parse(request.body)), 'User updated');
 };

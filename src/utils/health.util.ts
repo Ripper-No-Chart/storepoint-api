@@ -2,7 +2,6 @@ import { readFileSync } from 'fs';
 import mongoose from 'mongoose';
 import os from 'os';
 import path from 'path';
-
 import { HTTP_STATUS } from '@/constants/http.constants';
 import { IHealthReport, IPackageJsonVersionOnly } from '@/interfaces/health.interface';
 
@@ -53,10 +52,8 @@ const formatMemory = (bytes: number): string => `${(bytes / 1024 / 1024).toFixed
  * @returns Project version string from package.json (e.g., "1.0.0")
  */
 const getAppVersion = (): string => {
-  const pkgPath: string = path.resolve(__dirname, '../../package.json');
-  const raw: string = readFileSync(pkgPath, 'utf-8');
-  const pkg: IPackageJsonVersionOnly = JSON.parse(raw) as IPackageJsonVersionOnly;
-  return pkg.version!;
+  return (JSON.parse(readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8')) as IPackageJsonVersionOnly)
+    .version!;
 };
 
 /**
@@ -83,10 +80,13 @@ const getFormattedMemory = (): Record<string, string> =>
  * @returns Formatted uptime string
  */
 const formatUptime = (seconds: number): string => {
-  const hrs: number = Math.floor(seconds / 3600);
-  const mins: number = Math.floor((seconds % 3600) / 60);
-  const secs: number = Math.floor(seconds % 60);
-  return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  return `${Math.floor(seconds / 3600)
+    .toString()
+    .padStart(2, '0')}:${Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, '0')}:${Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, '0')}`;
 };
 
 /**
@@ -104,20 +104,17 @@ const formatUptime = (seconds: number): string => {
  * @returns Full health report payload and response status code
  */
 export const getHealthReport = (): IHealthReport => {
-  const dbState: number = mongoose.connection.readyState;
-  const isUp: boolean = dbState === 1;
-
   return {
-    statusCode: isUp ? HTTP_STATUS.OK : HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    statusCode: mongoose.connection.readyState === 1 ? HTTP_STATUS.OK : HTTP_STATUS.INTERNAL_SERVER_ERROR,
     payload: {
-      status: isUp ? 'ok' : 'error',
+      status: mongoose.connection.readyState === 1 ? 'ok' : 'error',
       uptime: formatUptime(process.uptime()),
       hostname: os.hostname(),
       memory: getFormattedMemory(),
       timestamp: formatTime(new Date()),
       mongo: {
-        connected: isUp,
-        state: dbState
+        connected: mongoose.connection.readyState === 1,
+        state: mongoose.connection.readyState
       },
       version: getAppVersion()
     }

@@ -1,7 +1,4 @@
-// src/controllers/auth.controller.ts
-
 import { HTTP_STATUS } from '@/constants/http.constants';
-import { UserPayload } from '@/interfaces/auth.interface';
 import { UserDocument } from '@/interfaces/user.interface';
 import { loginSchema, registerSchema } from '@/schemas/auth.schema';
 import * as authService from '@/services/auth.service';
@@ -22,8 +19,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
  * -> Authenticates user and returns token + user data.
  */
 export const login = async (request: FastifyRequest<{ Body: LoginInput }>, reply: FastifyReply): Promise<void> => {
-  const data: LoginInput = loginSchema.parse(request.body);
-  const { token, user } = await authService.login(data);
+  const { token, user } = await authService.login(loginSchema.parse(request.body));
   sendSuccess(reply, { token, user }, 'Login successful');
 };
 
@@ -41,9 +37,12 @@ export const register = async (
   request: FastifyRequest<{ Body: RegisterInput }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const data: RegisterInput = registerSchema.parse(request.body);
-  const user: UserDocument = await authService.register(data);
-  sendSuccess(reply, user, 'User registered', HTTP_STATUS.CREATED);
+  sendSuccess(
+    reply,
+    await authService.register(registerSchema.parse(request.body)),
+    'User registered',
+    HTTP_STATUS.CREATED
+  );
 };
 
 /**
@@ -65,14 +64,13 @@ export const getMe = async (
   request: FastifyRequest<{ Headers: Record<string, unknown> }>,
   reply: FastifyReply
 ): Promise<void> => {
-  const rawUser: unknown = request.user;
-
-  const user: UserPayload = isUserPayload(rawUser)
-    ? rawUser
-    : (() => {
-        throw createError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
-      })();
-
-  const userDoc: UserDocument = await authService.getUserByIdOrFail(user._id);
+  const userDoc: UserDocument = await authService.getUserByIdOrFail(
+    (isUserPayload(request.user)
+      ? request.user
+      : (() => {
+          throw createError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized');
+        })()
+    )._id
+  );
   sendSuccess(reply, userDoc);
 };

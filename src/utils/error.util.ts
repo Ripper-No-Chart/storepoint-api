@@ -9,8 +9,5 @@
  * @param message - Error message
  * @returns Error instance with statusCode
  */
-export const createError = (statusCode: number, message: string): Error => {
-  const err: Error & { statusCode?: number } = new Error(message);
-  err.statusCode = statusCode;
-  return err;
-};
+export const createError = (statusCode: number, message: string): Error =>
+  Object.assign(new Error(message), { statusCode });

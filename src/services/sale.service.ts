@@ -1,9 +1,10 @@
 import { SaleDocument } from '@/interfaces/sale.interface';
 import { SaleModel } from '@/models/sale.model';
-import { CreateSaleBody } from '@/types/sale.types';
+import { UserModel } from '@/models/user.model';
+import { CreateSaleBody, SaleQueryDto } from '@/types/sale.types';
 import { adjustStockOnSale } from '@/utils/adjust-stock.util';
 import { assertExists } from '@/utils/assert.util';
-import { Types } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 
 /**
  * Creates a new sale in the database.
@@ -36,16 +37,55 @@ export const createSale = async (data: CreateSaleBody, cashierId: Types.ObjectId
 };
 
 /**
- * Retrieves all sales from the database.
+ * Retrieves filtered and paginated sales.
  *
- * @returns Array of Sale documents with related product and cashier info
+ * @description
+ * -> Applies optional search on cashier name or email.
+ * -> Filters by sale date range if 'from' or 'to' are provided.
+ * -> Applies pagination and returns result with metadata.
+ * -> Throws 404 if no results found.
+ *
+ * @param dto - SaleQueryDto
+ * @returns Object with paginated sale data and metadata
  */
-export const listSales = async (): Promise<SaleDocument[]> => {
-  return SaleModel.find()
-    .populate('cashier', 'name email')
-    .populate('products.product', 'name price')
-    .sort({ createdAt: -1 })
-    .lean<SaleDocument[]>();
+export const listSalesWithFilters = async (
+  dto: SaleQueryDto
+): Promise<{
+  data: SaleDocument[];
+  total: number;
+  page: number;
+  limit: number;
+}> => {
+  const query: FilterQuery<SaleDocument> = {};
+
+  if (dto.from || dto.to) {
+    query.createdAt = {};
+    if (dto.from) query.createdAt.$gte = new Date(dto.from);
+    if (dto.to) query.createdAt.$lte = new Date(dto.to);
+  }
+
+  if (dto.search) {
+    query.cashier = {
+      $in: (
+        await UserModel.find({
+          $or: [{ name: { $regex: dto.search, $options: 'i' } }, { email: { $regex: dto.search, $options: 'i' } }]
+        }).select('_id')
+      ).map((u) => u._id)
+    };
+  }
+
+  const [data, total] = await Promise.all([
+    SaleModel.find(query)
+      .skip((dto.page - 1) * dto.limit)
+      .limit(dto.limit)
+      .populate('cashier', 'name email')
+      .populate('products.product', 'name code')
+      .lean<SaleDocument[]>(),
+
+    SaleModel.countDocuments(query)
+  ]);
+
+  return assertExists({ data, total, page: dto.page, limit: dto.limit }, 'No sales found for the given filters');
 };
 
 /**

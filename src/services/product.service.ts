@@ -35,6 +35,7 @@ export const listProducts = async (): Promise<ProductDocument[]> => {
  * @description
  * -> Applies optional search and criticalOnly filters.
  * -> Returns paginated results with total count.
+ * -> Throws 404 if no products match the criteria.
  *
  * @param dto - ProductQueryDto with filters and pagination config
  * @returns Object with paginated product data and metadata
@@ -47,29 +48,23 @@ export const listProductsWithFilters = async (
   page: number;
   limit: number;
 }> => {
-  return {
-    ...(await (async () => {
-      const query: FilterQuery<ProductDocument> = {
-        ...(dto.search && {
-          $or: [{ name: { $regex: dto.search, $options: 'i' } }, { code: { $regex: dto.search, $options: 'i' } }]
-        }),
-        ...(dto.criticalOnly && { $expr: { $lte: ['$stock', '$criticalStock'] } })
-      };
-
-      const [data, total] = await Promise.all([
-        ProductModel.find(query)
-          .skip((dto.page - 1) * dto.limit)
-          .limit(dto.limit)
-          .lean<ProductDocument[]>(),
-
-        ProductModel.countDocuments(query)
-      ]);
-
-      return { data, total };
-    })()),
-    page: dto.page,
-    limit: dto.limit
+  const query: FilterQuery<ProductDocument> = {
+    ...(dto.search && {
+      $or: [{ name: { $regex: dto.search, $options: 'i' } }, { code: { $regex: dto.search, $options: 'i' } }]
+    }),
+    ...(dto.criticalOnly && { $expr: { $lte: ['$stock', '$criticalStock'] } })
   };
+
+  const [data, total] = await Promise.all([
+    ProductModel.find(query)
+      .skip((dto.page - 1) * dto.limit)
+      .limit(dto.limit)
+      .lean<ProductDocument[]>(),
+
+    ProductModel.countDocuments(query)
+  ]);
+
+  return assertExists({ data, total, page: dto.page, limit: dto.limit }, 'No products found for the given filters');
 };
 
 /**

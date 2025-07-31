@@ -1,5 +1,5 @@
+import { saleCreateSchema, saleGetByIdSchema, saleLeanSchema, SaleQuerySchema } from '@/schemas/sale.schema';
 import { z } from 'zod';
-import { saleCreateSchema, saleGetByIdSchema, saleLeanSchema } from '@/schemas/sale.schema';
 
 /**
  * Payload for creating a sale.
@@ -41,3 +41,19 @@ export type SaleLean = z.infer<typeof saleLeanSchema>;
  * -> products: Array<{ product: ObjectId, quantity: number }>
  */
 export type SaleProductInput = CreateSaleBody['products'][number];
+
+/**
+ * Sale query DTO.
+ *
+ * @description
+ * -> Represents validated query parameters for filtered sales listing.
+ * -> Used to filter sales by search term and date range, with pagination.
+ *
+ * @fields
+ * -> search: string (optional)
+ * -> from: string (ISO date, optional)
+ * -> to: string (ISO date, optional)
+ * -> page: number (default 1)
+ * -> limit: number (default 10)
+ */
+export type SaleQueryDto = z.infer<typeof SaleQuerySchema>;

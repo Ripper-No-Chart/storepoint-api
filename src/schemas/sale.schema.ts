@@ -27,6 +27,28 @@ export const saleCreateSchema = z.object({
 });
 
 /**
+ * Zod schema for querying sales with filters and pagination.
+ *
+ * @description
+ * -> Validates optional filters for search and date range.
+ * -> Validates pagination inputs with defaults.
+ *
+ * @fields
+ * -> search: string (optional)
+ * -> from: string (ISO date, optional)
+ * -> to: string (ISO date, optional)
+ * -> page: number (default 1)
+ * -> limit: number (default 10)
+ */
+export const SaleQuerySchema = z.object({
+  search: z.string().trim().min(1).optional(),
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(100).default(10)
+});
+
+/**
  * Zod schema for fetching a sale by ID.
  *
  * @description

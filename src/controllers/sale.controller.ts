@@ -1,5 +1,6 @@
-import { saleCreateSchema, saleGetByIdSchema } from '@/schemas/sale.schema';
+import { saleCreateSchema, saleGetByIdSchema, SaleQuerySchema } from '@/schemas/sale.schema';
 import * as saleServices from '@/services/sale.service';
+import { SaleQueryDto } from '@/types/sale.types';
 import { getUserIdOrThrow } from '@/utils/get-user.util';
 import { sendSuccess } from '@/utils/response.util';
 import { FastifyReply, FastifyRequest } from 'fastify';
@@ -28,21 +29,27 @@ export const createSale = async (request: FastifyRequest, reply: FastifyReply): 
 };
 
 /**
- * Lists all sales.
+ * Lists sales with filters and pagination.
  *
  * @route POST /api/sales/list_sales
  * @access cashier, manager
  *
  * @description
- * -> Supports filtering by date, user, or product.
+ * -> Accepts optional search and date range filters.
+ * -> Returns paginated sales with cashier and product info.
  *
- * @fields
- * -> startDate – Optional filter start
- * -> endDate   – Optional filter end
- * -> cashierId – Optional user filter
+ * @body
+ * -> search: string (optional)
+ * -> from: string (ISO date, optional)
+ * -> to: string (ISO date, optional)
+ * -> page: number (default 1)
+ * -> limit: number (default 10)
  */
-export const listSales = async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  sendSuccess(reply, await saleServices.listSales(), 'Sales retrieved');
+export const listSales = async (
+  request: FastifyRequest<{ Body: SaleQueryDto }>,
+  reply: FastifyReply
+): Promise<void> => {
+  sendSuccess(reply, await saleServices.listSalesWithFilters(SaleQuerySchema.parse(request.body)), 'Sales retrieved');
 };
 
 /**
